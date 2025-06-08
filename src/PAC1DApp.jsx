@@ -11,13 +11,26 @@ const abi = [
 
 export default function App() {
   const [account, setAccount] = useState(null)
+  const [error, setError] = useState(null)
 
   async function connectWallet() {
-    const [acc] = await window.ethereum.request({ method: 'eth_requestAccounts' })
-    setAccount(acc)
+    if (!window.ethereum) {
+      setError("MetaMask não está instalado.")
+      return
+    }
+
+    try {
+      const [acc] = await window.ethereum.request({ method: 'eth_requestAccounts' })
+      setAccount(acc)
+      setError(null)
+    } catch (err) {
+      setError("Falha ao conectar com a carteira.")
+    }
   }
 
   async function invest() {
+    if (!window.ethereum || !account) return
+
     const provider = new ethers.BrowserProvider(window.ethereum)
     const signer = await provider.getSigner()
     const usdt = new ethers.Contract(usdtAddress, abi, signer)
@@ -30,6 +43,7 @@ export default function App() {
   return (
     <div style={{ padding: 40 }}>
       <h1>PAC1 dApp</h1>
+      {error && <p style={{ color: "red" }}>{error}</p>}
       {account ? (
         <>
           <p>Conectado: {account}</p>
